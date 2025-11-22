@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Giveaway UI</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 30px auto; }
+    label { display:block; margin-top:10px; }
+    input, select { padding:6px; width:100%; max-width:400px; }
+    .row { margin-top:12px; }
+    button { padding:8px 14px; margin-top:10px; }
+    .card { border:1px solid #ddd; padding:12px; border-radius:6px; margin-bottom:12px; }
+  </style>
+</head>
+<body>
+  <h1>Giveaway Web UI</h1>
+  <div class="card">
+    <h3>Config</h3>
+    <label>Pot (c) <input id="pot" type="number"/></label>
+    <label>Conversion rate (1c = $) <input id="rate" step="0.01" type="number"/></label>
+    <label>House edge (fraction) <input id="edge" step="0.01" type="number"/></label>
+    <label>Low risk pot% <input id="low" type="number"/></label>
+    <label>High risk pot% <input id="high" type="number"/></label>
+    <button id="saveConfig">Save Config</button>
+  </div>
+
+  <div class="card">
+    <h3>Create giveaway (post to channel)</h3>
+    <label>Channel ID <input id="channelId" type="text" placeholder="Channel ID where bot can post"/></label>
+    <label>Duration (sec) <input id="duration" type="number" value="60"/></label>
+    <label>Prize <input id="prize" type="text" value="Cool prize"/></label>
+    <button id="createGive">Create Giveaway</button>
+    <div id="createResult"></div>
+  </div>
+
+  <div class="card">
+    <h3>Existing Giveaways</h3>
+    <pre id="glist">Loading...</pre>
+  </div>
+
+<script>
+async function load() {
+  const cfg = await (await fetch('/api/config')).json();
+  document.getElementById('pot').value = cfg.pot;
+  document.getElementById('rate').value = cfg.conversionRateUSDPerC;
+  document.getElementById('edge').value = cfg.houseEdge;
+  document.getElementById('low').value = cfg.riskProfiles.low.potSharePercent;
+  document.getElementById('high').value = cfg.riskProfiles.high.potSharePercent;
+  refreshG();
+}
+async function saveConfig() {
+  const body = {
+    pot: parseInt(document.getElementById('pot').value),
+    conversionRateUSDPerC: parseFloat(document.getElementById('rate').value),
+    houseEdge: parseFloat(document.getElementById('edge').value),
+    riskProfiles: {
+      low: { potSharePercent: parseInt(document.getElementById('low').value) },
+      high: { potSharePercent: parseInt(document.getElementById('high').value) }
+    }
+  };
+  const res = await fetch('/api/config', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+  const j = await res.json();
+  alert("Saved");
+}
+async function createGive() {
+  const channelId = document.getElementById('channelId').value.trim();
+  const duration = parseInt(document.getElementById('duration').value);
+  const prize = document.getElementById('prize').value;
+  if (!channelId) { alert("Channel ID required"); return; }
+  const res = await fetch('/api/create', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ channelId, durationSec: duration, prize }) });
+  const j = await res.json();
+  document.getElementById('createResult').innerText = JSON.stringify(j, null, 2);
+  refreshG();
+}
+async function refreshG() {
+  const res = await fetch('/api/giveaways');
+  const j = await res.json();
+  document.getElementById('glist').innerText = JSON.stringify(j, null, 2);
+}
+document.getElementById('saveConfig').addEventListener('click', saveConfig);
+document.getElementById('createGive').addEventListener('click', createGive);
+
+load();
+</script>
+</body>
+</html>
