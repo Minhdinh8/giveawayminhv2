@@ -1,0 +1,15 @@
+{
+  "name": "discord-giveaway-randomorg",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.11.0",
+    "express": "^4.18.2",
+    "body-parser": "^1.20.2",
+    "fs-extra": "^11.1.1"
+  }
+}
